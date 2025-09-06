@@ -55,42 +55,45 @@ const LoginPage = () => {
 
     mutate(data, {
       onSuccess: (res) => {
-        console.log(res?.user.role);
         toast.dismiss(loadingToast);
 
-        if (!res?.token) {
+        console.log("Login Response:", res);
+
+        if (res?.token) {
+          localStorage.setItem("token", res.token);
+          localStorage.setItem("userId", res.user._id);
+
+          localStorage.setItem("userType", res.user.role);
+
+          if (res.user.role === "driver") {
+            localStorage.setItem("driverIsAvailable", res.user.isAvailable);
+          }
+
+          navigate("/home");
+
+          toast.success("تم تسجيل الدخول بنجاح", {
+            description: "مرحباً بك في تطبيق التاكسي.",
+          });
+
+          console.log("✅ تم تسجيل الدخول بنجاح");
+        } else {
           toast.error("خطأ في تسجيل الدخول", {
             description:
               res?.message ||
               "حدث خطأ أثناء تسجيل الدخول. يرجى المحاولة مرة أخرى.",
           });
-          return;
+          console.log("❌ خطأ: ما في token بالـ response");
         }
-        if (res?.token) {
-          console.log({ res });
-          localStorage.setItem("token", res.token);
-          localStorage.setItem("userId", res.user._id);
-          localStorage.setItem("userType", res.user.user.role);
-          if (res.user.user.role === "driver") {
-            localStorage.setItem("driverIsAvailable", res.user.isAvailable);
-          }
-          navigate("/home");
-        }
-        if (res?.role) {
-          const encRole = encryptRole(res.role);
-          localStorage.setItem("role", encRole);
-        }
-        toast.success("تم تسجيل الدخول بنجاح", {
-          description: "مرحباً بك في تطبيق التاكسي.",
-        });
-        console.log("تم تسجيل الدخول بنجاح");
       },
       onError: (error) => {
         toast.dismiss(loadingToast);
+
         toast.error("خطأ في تسجيل الدخول", {
           description:
             error?.message || "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.",
         });
+
+        console.error("❌ onError:", error);
       },
     });
   };

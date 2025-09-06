@@ -16,17 +16,19 @@ import {
   XCircle,
   MapPin,
   CreditCard,
+  Briefcase,
 } from "lucide-react";
 
 const Profile = () => {
   const userType = localStorage.getItem("userType") || "";
   const Id = localStorage.getItem("userId") || "";
-  console.log({ userType });
 
   const { data, isLoading, error } =
-    userType === "driver" ? queries.GetDriver(Id) : queries.GetUsers(Id);
-
-  console.log({ data });
+    userType === "driver"
+      ? queries.GetDriver(Id)
+      : userType === "user"
+      ? queries.GetUsers(Id)
+      : queries.GetEmp(Id);
 
   if (isLoading) {
     return (
@@ -74,9 +76,15 @@ const Profile = () => {
 
   const rawData = data.data;
 
-  // Handle different data structures for driver vs user
-  const user = userType === "driver" ? rawData.user : rawData;
+  const user =
+    userType === "driver"
+      ? rawData.user
+      : userType === "employee"
+      ? rawData.user
+      : rawData;
+
   const driverInfo = userType === "driver" ? rawData : null;
+  const employeeInfo = userType === "employee" ? rawData : null;
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -117,6 +125,35 @@ const Profile = () => {
     }
   };
 
+  const getStatusInArabic = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "aproved":
+      case "approved":
+        return "معتمد";
+      case "pending":
+        return "في الانتظار";
+      case "rejected":
+        return "مرفوض";
+      default:
+        return status;
+    }
+  };
+
+  const getUserTypeInArabic = (type: string) => {
+    switch (type) {
+      case "driver":
+        return "سائق";
+      case "employee":
+        return "موظف";
+      case "user":
+        return "مستخدم";
+      case "admin":
+        return "مدير";
+      default:
+        return type;
+    }
+  };
+
   return (
     <div className="p-6" dir="rtl">
       <div className="max-w-4xl mx-auto">
@@ -131,21 +168,25 @@ const Profile = () => {
               {user?.firstName} {user?.lastName}
             </CardTitle>
             <p className="text-primary">@{user?.userName}</p>
-            {userType === "driver" && (
+            {(userType === "driver" || userType === "employee") && (
               <div className="flex items-center justify-center gap-2 mt-2">
-                {getStatusIcon(driverInfo?.status)}
+                {getStatusIcon(
+                  userType === "driver"
+                    ? driverInfo?.status
+                    : employeeInfo?.status
+                )}
                 <span
                   className={`text-sm font-medium ${getStatusColor(
-                    driverInfo?.status
+                    userType === "driver"
+                      ? driverInfo?.status
+                      : employeeInfo?.status
                   )}`}
                 >
-                  {driverInfo?.status === "Aproved"
-                    ? "معتمد"
-                    : driverInfo?.status === "pending"
-                    ? "في الانتظار"
-                    : driverInfo?.status === "rejected"
-                    ? "مرفوض"
-                    : driverInfo?.status}
+                  {getStatusInArabic(
+                    userType === "driver"
+                      ? driverInfo?.status
+                      : employeeInfo?.status
+                  )}
                 </span>
               </div>
             )}
@@ -206,18 +247,13 @@ const Profile = () => {
             <div className="min-w-0 flex-1">
               <p className="text-sm text-gray-500">الدور</p>
               <p className="font-medium">
-                {userType === "driver"
-                  ? "سائق"
-                  : user?.role === "user"
-                  ? "مستخدم"
-                  : user?.role === "admin"
-                  ? "مدير"
-                  : user?.role}
+                {getUserTypeInArabic(
+                  userType === "employee" ? "employee" : user?.role || userType
+                )}
               </p>
             </div>
           </div>
 
-          {/* Driver-specific fields */}
           {userType === "driver" && driverInfo && (
             <>
               <div className="flex items-center gap-3 p-4 border rounded-lg hover:border-primary/50 transition-colors">
@@ -271,13 +307,53 @@ const Profile = () => {
             </>
           )}
 
+          {userType === "employee" && employeeInfo && (
+            <>
+              <div className="flex items-center gap-3 p-4 border rounded-lg hover:border-primary/50 transition-colors">
+                <Hash className="h-5 w-5 text-primary flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm text-gray-500">معرف الموظف</p>
+                  <p className="font-medium truncate">{employeeInfo._id}</p>
+                </div>
+              </div>
+
+              {employeeInfo.jobRole && (
+                <>
+                  <div className="flex items-center gap-3 p-4 border rounded-lg hover:border-primary/50 transition-colors">
+                    <Hash className="h-5 w-5 text-primary flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-gray-500">معرف الوظيفة</p>
+                      <p className="font-medium truncate">
+                        {employeeInfo.jobRole._id}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-4 border rounded-lg hover:border-primary/50 transition-colors">
+                    <Briefcase className="h-5 w-5 text-primary flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-gray-500">المسمى الوظيفي</p>
+                      <p className="font-medium">
+                        {employeeInfo.jobRole.title}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </>
+          )}
+
           <div className="flex items-center gap-3 p-4 border rounded-lg hover:border-primary/50 transition-colors">
             <Calendar className="h-5 w-5 text-primary flex-shrink-0" />
             <div className="min-w-0 flex-1">
               <p className="text-sm text-gray-500">تاريخ الإنشاء</p>
               <p className="font-medium">
                 {new Date(
-                  userType === "driver" ? driverInfo.createdAt : user?.createdAt
+                  userType === "driver"
+                    ? driverInfo.createdAt
+                    : userType === "employee"
+                    ? employeeInfo.createdAt
+                    : user?.createdAt
                 ).toLocaleDateString("ar-EG")}
               </p>
             </div>
@@ -289,7 +365,11 @@ const Profile = () => {
               <p className="text-sm text-gray-500">آخر تحديث</p>
               <p className="font-medium">
                 {new Date(
-                  userType === "driver" ? driverInfo.updatedAt : user?.updatedAt
+                  userType === "driver"
+                    ? driverInfo.updatedAt
+                    : userType === "employee"
+                    ? employeeInfo.updatedAt
+                    : user?.updatedAt
                 ).toLocaleDateString("ar-EG")}
               </p>
             </div>

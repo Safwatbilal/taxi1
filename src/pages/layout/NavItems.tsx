@@ -30,6 +30,28 @@ export const adminMenuItems = [
     breadcrumb: "ادارة الوظائف",
   },
 ];
+export const empMenuItems = [
+  {
+    icon: LayoutDashboard,
+    title: "الصفحة الرئيسية",
+    url: "/home",
+    breadcrumb: "الرئيسية",
+  },
+  {
+    icon: CarFront,
+    title: "السائقون",
+    url: "/drivers",
+    breadcrumb: "السائقون",
+  },
+  { icon: User, title: "الموظفون", url: "/employees", breadcrumb: "الموظفون" },
+  { icon: Users, title: "المستخدمون", url: "/users", breadcrumb: "المستخدمون" },
+  {
+    icon: UserCircle,
+    title: "البروفايل",
+    url: "/profile",
+    breadcrumb: "البروفايل",
+  },
+];
 
 export const userMenuItems = [
   {

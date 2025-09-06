@@ -58,13 +58,15 @@ const LoginPage = () => {
         toast.dismiss(loadingToast);
 
         console.log("Login Response:", res);
-
+        console.log({ res });
         if (res?.token) {
           localStorage.setItem("token", res.token);
           localStorage.setItem("userId", res.user._id);
 
-          localStorage.setItem("userType", res.user.role);
-
+          localStorage.setItem(
+            "userType",
+            res?.user?.user?.role || res?.user?.role || ""
+          );
           if (res.user.role === "driver") {
             localStorage.setItem("driverIsAvailable", res.user.isAvailable);
           }

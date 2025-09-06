@@ -17,6 +17,11 @@ const queries = {
       queryKey: ["driver", id],
       queryFn: () => API.getDriver(id),
     }),
+  GetEmp: (id: string) =>
+    useQuery({
+      queryKey: ["emp", id],
+      queryFn: () => API.getEmp(id),
+    }),
 };
 
 export default queries;

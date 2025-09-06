@@ -18,6 +18,10 @@ const API = {
     const { data } = await axios.get(`driver/${id}`);
     return data;
   },
+  getEmp: async (id: string) => {
+    const { data } = await axios.get(`employees/${id}`);
+    return data;
+  },
 };
 
 export default API;

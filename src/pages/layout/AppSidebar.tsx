@@ -23,7 +23,12 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useNavigate, useLocation } from "react-router-dom";
-import { adminMenuItems, driverMenuItems, userMenuItems } from "./NavItems";
+import {
+  adminMenuItems,
+  driverMenuItems,
+  userMenuItems,
+  empMenuItems,
+} from "./NavItems";
 
 const AppSidebar: React.FC = () => {
   const location = useLocation();
@@ -40,8 +45,9 @@ const AppSidebar: React.FC = () => {
       case "driver":
         return driverMenuItems;
       case "user":
-      default:
         return userMenuItems;
+      default:
+        return empMenuItems;
     }
   };
 
@@ -64,8 +70,9 @@ const AppSidebar: React.FC = () => {
       case "driver":
         return "سائق";
       case "user":
-      default:
         return "مستخدم";
+      default:
+        return "موظف";
     }
   };
 

@@ -55,10 +55,10 @@ const LoginPage = () => {
 
     mutate(data, {
       onSuccess: (res) => {
-  console.log(res?.user.role);
+        console.log(res?.user.role);
         toast.dismiss(loadingToast);
 
-        if (res?.status === false) {
+        if (!res?.token) {
           toast.error("خطأ في تسجيل الدخول", {
             description:
               res?.message ||
@@ -71,15 +71,15 @@ const LoginPage = () => {
           localStorage.setItem("token", res.token);
           localStorage.setItem("userId", res.user._id);
           localStorage.setItem("userType", res.user.user.role);
-          if(res.user.user.role==='driver'){
+          if (res.user.user.role === "driver") {
             localStorage.setItem("driverIsAvailable", res.user.isAvailable);
           }
           navigate("/home");
         }
-          if (res?.role) {
-    const encRole = encryptRole(res.role);
-    localStorage.setItem("role", encRole);
-  }
+        if (res?.role) {
+          const encRole = encryptRole(res.role);
+          localStorage.setItem("role", encRole);
+        }
         toast.success("تم تسجيل الدخول بنجاح", {
           description: "مرحباً بك في تطبيق التاكسي.",
         });

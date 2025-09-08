@@ -367,7 +367,7 @@ const Drivers: React.FC = () => {
         >
           <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
             <CardHeader className="border-b border-slate-100">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between my-4">
                 <div className="relative flex-1 max-w-md">
                   <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input
@@ -389,18 +389,16 @@ const Drivers: React.FC = () => {
                 </div>
               </div>
               <div
-                className="grid grid-cols-1 gap-4 w-full 
-             sm:grid-cols-[repeat(auto-fit,minmax(250px,1fr))] 
-             md:grid-cols-[repeat(2,1fr)] lg:grid-cols-[repeat(3,1fr)]"
+                className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4  "
               >
                 {/* الحالة */}
-                <div className="flex flex-col gap-1 w-full">
+                <div className="flex flex-col gap-3 w-full">
                   <Label htmlFor="status-filter">الحالة</Label>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="جميع الحالات" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="w-full">
                       <SelectItem value="Pending">في الانتظار</SelectItem>
                       <SelectItem value="Approved">مقبول</SelectItem>
                       <SelectItem value="Rejected">مرفوض</SelectItem>
@@ -409,16 +407,16 @@ const Drivers: React.FC = () => {
                 </div>
 
                 {/* نوع المركبة */}
-                <div className="flex flex-col gap-1 w-full">
+                <div className="flex flex-col gap-3 w-full">
                   <Label htmlFor="vehicle-type-filter">نوع المركبة</Label>
                   <Select
                     value={vehicleTypeFilter}
                     onValueChange={setVehicleTypeFilter}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="جميع الأنواع" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="w-full">
                       <SelectItem value="Standard">عادي</SelectItem>
                       <SelectItem value="Vip">مميز</SelectItem>
                       <SelectItem value="Premium">فاخر</SelectItem>
@@ -427,26 +425,32 @@ const Drivers: React.FC = () => {
                 </div>
 
                 {/* حجم المركبة */}
-                <div className="flex flex-col gap-1 w-full">
+                <div className="flex flex-col gap-3 w-full">
                   <Label htmlFor="vehicle-size-filter">حجم المركبة</Label>
+                  
                   <Select
                     value={vehicleSizeFilter}
-                    onValueChange={setVehicleSizeFilter}
-                  >
-                    <SelectTrigger>
+                    onValueChange={setVehicleSizeFilter} 
+                    >
+             
+                    <SelectTrigger className="w-full" >
                       <SelectValue placeholder="جميع الأحجام" />
                     </SelectTrigger>
-                    <SelectContent>
+                      
+                    <SelectContent 
+                    className="w-full"
+                    >
                       <SelectItem value="4">4 مقاعد</SelectItem>
                       <SelectItem value="6">6 مقاعد</SelectItem>
                       <SelectItem value="12">12 مقعد</SelectItem>
                       <SelectItem value="24">24 مقعد</SelectItem>
                     </SelectContent>
                   </Select>
+                    
                 </div>
 
                 {/* البحث برقم الرخصة */}
-                <div className="flex flex-col gap-1 w-full">
+                <div className="flex flex-col gap-3 lg:w-[70%]">
                   <Label htmlFor="license-filter">رقم الرخصة</Label>
                   <Input
                     placeholder="البحث برقم الرخصة..."

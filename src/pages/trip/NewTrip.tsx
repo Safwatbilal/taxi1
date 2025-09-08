@@ -8,6 +8,7 @@ import {
   useMap,
 } from "react-leaflet";
 import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 import {
   Sheet,
   SheetContent,
@@ -77,6 +78,18 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
+const driverIcon = new L.Icon({
+  iconUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  iconRetinaUrl: "https://cdn-icons-png.flaticon.com/512/10740/10740612.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+  iconSize: [60, 50],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
 interface Location {
   lat: number;
   lng: number;
@@ -104,6 +117,19 @@ interface RouteStep {
   lng: number;
 }
 
+interface AcceptedTripData {
+  tripId: string;
+  driverID: string;
+  lat: number;
+  lng: number;
+}
+
+interface DriverLocationUpdate {
+  tripId: string;
+  lat: number;
+  lng: number;
+}
+
 export default function TripPlanner() {
   const { socket, isConnected } = useSocket();
   console.log({ isConnected });
@@ -121,9 +147,15 @@ export default function TripPlanner() {
   const [isLoadingRoute, setIsLoadingRoute] = useState<boolean>(false);
   const [tripId, setTripId] = useState<string | null>(null);
   const [waitingForDriver, setWaitingForDriver] = useState<boolean>(false);
+  const [driverLocation, setDriverLocation] = useState<Location | null>(null);
+  const [driverToStartRoute, setDriverToStartRoute] = useState<RouteStep[]>([]);
+  const [showTripDetails, setShowTripDetails] = useState<boolean>(false);
+  const [isLoadingDriverRoute, setIsLoadingDriverRoute] =
+    useState<boolean>(false);
+  const [showTripMap, setShowTripMap] = useState<boolean>(false);
   const mapRef = useRef<any>(null);
-  const userId =
-    typeof window !== "undefined" ? localStorage.getItem("userId") : null;
+  const userId = localStorage.getItem("userId");
+  console.log({ userId });
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -151,58 +183,68 @@ export default function TripPlanner() {
     }
   }, []);
 
-  // Socket.IO event listeners
   useEffect(() => {
     if (!socket || !isConnected) return;
 
-    // انضمام الراكب للغرفة
-    socket.emit("rider:join", { userId });
+    socket.emit("rider:join", { riderID: userId });
 
-    // استماع لاستجابة السائق
-    socket.on("trip:response", (data) => {
-      console.log("🚗 Driver responded:", data);
-      toast.info(
-        `سائق يريد قبول رحلتك! اسم السائق: ${data.driverName || "غير محدد"}`
-      );
-      setWaitingForDriver(true);
-    });
-
-    // استماع لقبول الرحلة
-    socket.on("trip:accepted", (data) => {
+    socket.on("trip:accepted", async (data: AcceptedTripData) => {
       console.log("✅ Trip accepted:", data);
-      toast.success(`تم قبول الرحلة! رقم الرحلة: ${data.tripId}`);
-      setTripId(data.tripId);
-      setIsSheetOpen(false);
+      toast.success("تم قبول الرحلة بنجاح!");
+
+      const driverPos: Location = { lat: data.lat, lng: data.lng };
+      setDriverLocation(driverPos);
+      setTripId(data.tripId || "confirmed");
       setIsBooking(false);
       setWaitingForDriver(false);
+      setShowTripMap(true);
+
+      if (startLocation) {
+        setIsLoadingDriverRoute(true);
+        try {
+          const driverRoute = await getRoute(driverPos, startLocation);
+          setDriverToStartRoute(driverRoute);
+        } catch (error) {
+          console.error("Error getting driver route:", error);
+        } finally {
+          setIsLoadingDriverRoute(false);
+        }
+      }
     });
 
-    // استماع لأخطاء الحجز
-    socket.on("trip:error", (error) => {
-      console.log("❌ Trip error:", error);
-      toast.error(`حدث خطأ في الرحلة: ${error.message}`);
-      setIsBooking(false);
-      setWaitingForDriver(false);
-    });
+    socket.on(
+      "driverLocationUpdateToRider",
+      async (data: DriverLocationUpdate) => {
+        console.log("📍 Driver location update", data);
 
-    // استماع لعدم وجود سائقين متاحين
-    socket.on("trip:no_drivers", () => {
-      console.log("⚠️ No drivers available");
-      toast.warning(
-        "لا يوجد سائقين متاحين في الوقت الحالي، يرجى المحاولة لاحقاً"
-      );
-      setIsBooking(false);
-      setWaitingForDriver(false);
-    });
+        if (data.tripId === tripId) {
+          const newDriverLocation: Location = { lat: data.lat, lng: data.lng };
+          setDriverLocation(newDriverLocation);
 
-    // Cleanup listeners
+          if (startLocation) {
+            setIsLoadingDriverRoute(true);
+            try {
+              const updatedDriverRoute = await getRoute(
+                newDriverLocation,
+                startLocation
+              );
+              setDriverToStartRoute(updatedDriverRoute);
+            } catch (error) {
+              console.error("Error updating driver route:", error);
+            } finally {
+              setIsLoadingDriverRoute(false);
+            }
+          }
+        }
+      }
+    );
+
     return () => {
       socket.off("trip:response");
       socket.off("trip:accepted");
-      socket.off("trip:error");
-      socket.off("trip:no_drivers");
+      socket.off("driverLocationUpdateToRider");
     };
-  }, [socket, isConnected, userId]);
+  }, [socket, isConnected, userId, startLocation, tripId]);
 
   const handleMapClick = useCallback(
     async (latlng: L.LatLng) => {
@@ -235,6 +277,9 @@ export default function TripPlanner() {
     setRoute([]);
     setTripId(null);
     setWaitingForDriver(false);
+    setShowTripMap(false);
+    setDriverLocation(null);
+    setDriverToStartRoute([]);
   };
 
   const resetToCurrentLocation = (): void => {
@@ -252,13 +297,15 @@ export default function TripPlanner() {
           setRoute([]);
         },
         (error) => {
-          console.warn("خطأ في تحديث الموقع:", error);
+          console.warn("خطأ في تحديد الموقع:", error);
         }
       );
     }
   };
 
   const handleSheetOpenChange = (open: boolean): void => {
+    if (showTripMap) return;
+
     setIsSheetOpen(open);
     if (open) {
       setIsLoading(true);
@@ -273,7 +320,7 @@ export default function TripPlanner() {
   const canProceedToStep4 = vehicleSize;
 
   const handleNextStep = () => {
-    if (step < 3) {
+    if (step <= 3) {
       setStep(step + 1);
     }
   };
@@ -308,22 +355,9 @@ export default function TripPlanner() {
         vehicleSize: parseInt(vehicleSize),
       };
 
-      if (socket && isConnected) {
-        console.log("🚀 Sending new trip request:", bookingData);
-
-        // إرسال طلب الرحلة الجديدة
-        socket.emit("newTrip", bookingData);
-
-        // عرض رسالة انتظار
-        toast.info("جاري البحث عن سائق مناسب...", {
-          duration: 3000,
-        });
-      } else {
-        // Fallback للـ HTTP request
-        toast.error("غير متصل بالخادم، يرجى المحاولة لاحقاً");
-        setIsBooking(false);
-        setWaitingForDriver(false);
-      }
+      await axios.post("trip/newTrip", bookingData);
+      console.log("📤 Trip request sent:", bookingData);
+      toast.success("تم إرسال طلب الرحلة بنجاح 🚕");
     } catch (error) {
       console.error("Error booking trip:", error);
       toast.error("حدث خطأ في حجز الرحلة");
@@ -373,6 +407,115 @@ export default function TripPlanner() {
         return "";
     }
   };
+
+  if (showTripMap && tripId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 p-4">
+        <div className="h-full max-w-6xl mx-auto space-y-4">
+          <div className="bg-white dark:bg-neutral-900 p-4 rounded-2xl shadow-lg border border-border/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                  <Car className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg">رحلة نشطة</h3>
+                  <p className="text-sm text-muted-foreground">
+                    رقم الرحلة: {tripId}
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={resetLocations}
+                variant="outline"
+                size="sm"
+                className="rounded-xl"
+              >
+                إنهاء الرحلة
+              </Button>
+            </div>
+          </div>
+
+          <div className="relative h-[calc(100vh-150px)] w-full rounded-3xl overflow-hidden shadow-xl border border-border/40">
+            {(isLoadingDriverRoute || isLoadingRoute) && (
+              <div className="absolute top-5 left-5 z-50 bg-primary text-primary-foreground px-5 py-2.5 rounded-full text-sm flex items-center gap-3 shadow-lg">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>جاري حساب المسار...</span>
+              </div>
+            )}
+            <MapContainer
+              center={
+                startLocation
+                  ? [startLocation.lat, startLocation.lng]
+                  : userLocation
+                  ? [userLocation.lat, userLocation.lng]
+                  : [24.7136, 46.6753]
+              }
+              zoom={12}
+              style={{ height: "100%", width: "100%" }}
+              className="rounded-3xl grayscale-[20%] contrast-110"
+            >
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
+                attribution="&copy; OpenStreetMap contributors"
+              />
+
+              {startLocation && (
+                <Marker
+                  position={[startLocation.lat, startLocation.lng]}
+                  icon={startIcon}
+                />
+              )}
+
+              {endLocation && (
+                <Marker
+                  position={[endLocation.lat, endLocation.lng]}
+                  icon={endIcon}
+                />
+              )}
+
+              {driverLocation && (
+                <Marker
+                  position={[driverLocation.lat, driverLocation.lng]}
+                  icon={driverIcon}
+                />
+              )}
+
+              {route.length > 0 && (
+                <Polyline
+                  positions={route.map((step) => [step.lat, step.lng])}
+                  pathOptions={{
+                    color: "#3b82f6",
+                    weight: 5,
+                    opacity: 0.85,
+                    lineCap: "round",
+                    lineJoin: "round",
+                  }}
+                />
+              )}
+
+              {driverToStartRoute.length > 0 && (
+                <Polyline
+                  positions={driverToStartRoute.map((step) => [
+                    step.lat,
+                    step.lng,
+                  ])}
+                  pathOptions={{
+                    color: "#22c55e",
+                    weight: 4,
+                    opacity: 0.85,
+                    lineCap: "round",
+                    lineJoin: "round",
+                    dashArray: "10, 10",
+                  }}
+                />
+              )}
+            </MapContainer>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
@@ -448,7 +591,7 @@ export default function TripPlanner() {
           >
             <SheetHeader className="pb-8 border-b border-border/50">
               <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full mx-auto mb-6 opacity-60"></div>
-              <StepIndicator currentStep={step} totalSteps={3} />
+              <StepIndicator currentStep={step} totalSteps={4} />
               <SheetTitle className="text-2xl font-bold text-center">
                 {waitingForDriver ? "جاري البحث عن سائق..." : getStepTitle()}
               </SheetTitle>
@@ -457,9 +600,42 @@ export default function TripPlanner() {
               </SheetDescription>
 
               {waitingForDriver && (
-                <div className="flex justify-center mt-4">
-                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                </div>
+                <motion.svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="100"
+                  height="60"
+                  viewBox="0 0 100 60"
+                  fill="none"
+                  initial={{ x: -500 }}
+                  animate={{ x: -1600 }}
+                  transition={{
+                    duration: 5,
+                    repeat: Infinity,
+                    repeatType: "loop",
+                  }}
+                >
+                  <rect
+                    x="10"
+                    y="20"
+                    width="80"
+                    height="20"
+                    rx="4"
+                    fill={"#1976d2"}
+                  />
+                  <path d="M30 20 L40 10 H60 L70 20 Z" fill={"#1976d2"} />
+                  <rect
+                    x="42"
+                    y="12"
+                    width="16"
+                    height="8"
+                    fill="white"
+                    opacity="0.9"
+                  />
+                  <circle cx="25" cy="42" r="8" fill="#222" />
+                  <circle cx="75" cy="42" r="8" fill="#222" />
+                  <circle cx="25" cy="42" r="3" fill="#bbb" />
+                  <circle cx="75" cy="42" r="3" fill="#bbb" />
+                </motion.svg>
               )}
             </SheetHeader>
 
@@ -470,7 +646,7 @@ export default function TripPlanner() {
                     onClick={handlePrevStep}
                     variant="outline"
                     size="lg"
-                    className="px-8 py-4 rounded-xl border-2 hover:border-primary/30 transition-all duration-300 flex items-center space-x-2 space-x-reverse"
+                    className="px-8 py-4 mr-7 rounded-xl border-2 hover:border-primary/30 transition-all duration-300 flex items-center space-x-2 space-x-reverse"
                   >
                     <ArrowRight className="w-5 h-5" />
                     <span>السابق</span>
@@ -483,10 +659,10 @@ export default function TripPlanner() {
                   <Button
                     onClick={handleNextStep}
                     size="lg"
-                    className="px-8 py-4 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 bg-gradient-to-r from-primary to-primary/90 flex items-center space-x-2"
+                    className="px-8 py-4 ml-7 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 bg-gradient-to-r from-primary to-primary/90 flex items-center space-x-2"
                   >
                     <span>التالي</span>
-                    <ArrowLeft className="w-5 h-5" />
+                    <ArrowLeft className="w-6 h-5" />
                   </Button>
                 )}
 
@@ -494,19 +670,29 @@ export default function TripPlanner() {
                   <Button
                     onClick={handleNextStep}
                     size="lg"
-                    className="px-8 py-4 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 bg-gradient-to-r from-primary to-primary/90 flex items-center space-x-2"
+                    className="px-8 py-4 ml-7 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 bg-gradient-to-r from-primary to-primary/90 flex items-center space-x-2"
+                  >
+                    <span>التالي</span>
+                    <ArrowLeft className="w-5 h-5" />
+                  </Button>
+                )}
+                {step === 3 && canProceedToStep3 && !waitingForDriver && (
+                  <Button
+                    onClick={handleNextStep}
+                    size="lg"
+                    className="px-8 py-4 ml-7 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 bg-gradient-to-r from-primary to-primary/90 flex items-center space-x-2"
                   >
                     <span>التالي</span>
                     <ArrowLeft className="w-5 h-5" />
                   </Button>
                 )}
 
-                {step === 3 && canProceedToStep4 && !waitingForDriver && (
+                {step === 4 && canProceedToStep4 && !waitingForDriver && (
                   <Button
                     onClick={handleBookTrip}
                     disabled={isBooking}
                     size="lg"
-                    className="px-8 py-4 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 disabled:opacity-60 bg-gradient-to-r from-green-500 to-green-600 flex items-center space-x-2"
+                    className="px-8 py-4 ml-7 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 disabled:opacity-60 bg-gradient-to-r from-green-500 to-green-600 flex items-center space-x-2"
                   >
                     {isBooking ? (
                       <>
@@ -674,7 +860,58 @@ export default function TripPlanner() {
                             </div>
                             <div className="bg-background/70 backdrop-blur p-3 rounded-xl">
                               <p className="font-bold text-primary">
-                                {Math.round(distance * 5)} ر.س
+                                {Math.round(distance * 5)} ل.س
+                              </p>
+                              <p className="text-muted-foreground">السعر</p>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 text-sm mt-4">
+                            <div className="bg-background/70 backdrop-blur p-3 rounded-xl">
+                              <p className="font-bold text-primary">
+                                {vehicleType}
+                              </p>
+                              <p className="text-muted-foreground">
+                                نوع السيارة
+                              </p>
+                            </div>
+                            <div className="bg-background/70 backdrop-blur p-3 rounded-xl">
+                              <p className="font-bold text-primary">
+                                {vehicleSize} مقاعد
+                              </p>
+                              <p className="text-muted-foreground">
+                                حجم السيارة
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {step === 4 && (
+                  <div className="space-y-6">
+                    {vehicleSize && startLocation && endLocation && (
+                      <div className="bg-gradient-to-br from-primary/5 to-primary/10 p-6 rounded-2xl border border-primary/20 shadow-lg">
+                        <div className="text-center space-y-3">
+                          <h4 className="font-bold text-lg text-primary">
+                            تفاصيل الرحلة
+                          </h4>
+                          <div className="grid grid-cols-3 gap-4 text-sm">
+                            <div className="bg-background/70 backdrop-blur p-3 rounded-xl">
+                              <p className="font-bold text-primary">
+                                {distance.toFixed(1)} كم
+                              </p>
+                              <p className="text-muted-foreground">المسافة</p>
+                            </div>
+                            <div className="bg-background/70 backdrop-blur p-3 rounded-xl">
+                              <p className="font-bold text-primary">
+                                {estimatedTime} د
+                              </p>
+                              <p className="text-muted-foreground">الوقت</p>
+                            </div>
+                            <div className="bg-background/70 backdrop-blur p-3 rounded-xl">
+                              <p className="font-bold text-primary">
+                                {Math.round(distance * 5)} ل.س
                               </p>
                               <p className="text-muted-foreground">السعر</p>
                             </div>

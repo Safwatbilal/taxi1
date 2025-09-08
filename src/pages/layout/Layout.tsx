@@ -36,44 +36,44 @@ const Layout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-//  const {data}=queries.GetAllDriver({
-  
-//  })
+  //  const {data}=queries.GetAllDriver({
+
+  //  })
   // const isDriverAvailable=;
   const [isDark, setIsDark] = useState(false);
-  const driverIsAvailable=localStorage.getItem("driverIsAvailable");
+  const driverIsAvailable = localStorage.getItem("driverIsAvailable");
   // console.log(Boolean(driverIsAvailable));
   const [isOnline, setIsOnline] = useState(driverIsAvailable);
   const userType = localStorage.getItem("userType") || "user";
   const menuItems = getMenuItems(userType);
 
-  const { mutate: toggleDriverAvailability, isPending: isToggling } =
-    queries.AvailablilityDriver();
+  // const { mutate: toggleDriverAvailability, isPending: isToggling } =
+  //   queries.AvailablilityDriver();
 
-  const handleToggleDriver = () => {
-    const driverId = localStorage.getItem("userId") as string;
-    const newStatus = isOnline==='true'?false:true;
-    // console.log(newStatus);
-    localStorage.setItem("driverIsAvailable",String(newStatus));
-    console.log(newStatus)
-    toggleDriverAvailability(
-      { id: driverId, isAvailable: newStatus },
-      {
-        onSuccess: () => {
-          setIsOnline(newStatus?'true':'false');
-          toast.success(
-            newStatus
-              ? "تم تحويل السائق إلى Online"
-              : "تم تحويل السائق إلى Offline"
-          );
-        },
-        onError: (error: any) => {
-          toast.error("حدث خطأ في تغيير حالة السائق");
-          console.error("Driver availability error:", error);
-        },
-      }
-    );
-  };
+  // const handleToggleDriver = () => {
+  //   const driverId = localStorage.getItem("userId") as string;
+  //   const newStatus = isOnline==='true'?false:true;
+  //   // console.log(newStatus);
+  //   localStorage.setItem("driverIsAvailable",String(newStatus));
+  //   console.log(newStatus)
+  //   toggleDriverAvailability(
+  //     { id: driverId, isAvailable: newStatus },
+  //     {
+  //       onSuccess: () => {
+  //         setIsOnline(newStatus?'true':'false');
+  //         toast.success(
+  //           newStatus
+  //             ? "تم تحويل السائق إلى Online"
+  //             : "تم تحويل السائق إلى Offline"
+  //         );
+  //       },
+  //       onError: (error: any) => {
+  //         toast.error("حدث خطأ في تغيير حالة السائق");
+  //         console.error("Driver availability error:", error);
+  //       },
+  //     }
+  //   );
+  // };
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
@@ -195,7 +195,6 @@ const Layout: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-3">
-                {/* زر تبديل الثيم */}
                 <button
                   onClick={toggleTheme}
                   className="h-8 w-8 rounded-full bg-sidebar-accent/50 hover:bg-sidebar-accent flex items-center justify-center transition-all duration-200 hover:scale-105"
@@ -203,27 +202,6 @@ const Layout: React.FC = () => {
                 >
                   {isDark ? <Sun size={16} /> : <Moon size={16} />}
                 </button>
-
-                {/* زر تبديل حالة السائق Online/Offline */}
-                {userType === "driver" && (
-                  <button
-                    onClick={handleToggleDriver}
-                    disabled={isToggling}
-                    className={`h-8 px-3 rounded-full font-medium text-white transition-all duration-200 ${
-                      isToggling
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : isOnline==='true'
-                        ? "bg-green-600 hover:bg-green-700"
-                        : "bg-red-500 hover:bg-red-600"
-                    }`}
-                  >
-                    {isToggling
-                      ? "جارٍ التغيير..."
-                      : isOnline ==='true'
-                      ? "متصل"
-                      : "غير متصل"}
-                  </button>
-                )}
               </div>
             </div>
           </header>

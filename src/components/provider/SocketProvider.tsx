@@ -15,12 +15,12 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
+  console.log({ isConnected });
   const [connectionStatus, setConnectionStatus] = useState<
     "connecting" | "connected" | "disconnected" | "error"
   >("connecting");
 
   useEffect(() => {
-    // التحقق من الحالة الأولية
     if (socket.connected) {
       setIsConnected(true);
       setConnectionStatus("connected");
@@ -55,13 +55,11 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
       setConnectionStatus("connected");
     }
 
-    // إضافة المستمعين
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
     socket.on("connect_error", onConnectError);
     socket.on("reconnect", onReconnect);
 
-    // محاولة الاتصال إذا لم يكن متصل
     if (!socket.connected) {
       console.log("🚀 Attempting to connect socket...");
       socket.connect();

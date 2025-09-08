@@ -127,7 +127,7 @@ const JoinUs = () => {
                     ))}
                   </div>
                 </CardContent>
-                <CardFooter className="relative z-10 p-5">
+                <CardFooter className="relative z-10 pt-0">
                   <Button
                     onClick={() => handleNavigation(type.link)}
                     className={`w-full`}

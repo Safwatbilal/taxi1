@@ -28,6 +28,7 @@ import NavBar from "@/pages/layout/Layout";
 import Chat from "@/pages/driver/NOT";
 import Profile from "@/pages/global/Profile";
 import Roles from "@/pages/global/Roles";
+import Trips from "@/pages/global/Trips";
 
 const routes = createBrowserRouter(
   createRoutesFromElements(
@@ -54,6 +55,7 @@ const routes = createBrowserRouter(
           <Route path="/current-trip" element={<DriverDashboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/role" element={<Roles />} />
+          <Route path="/trips" element={<Trips />} />
 
           <Route path="*" element={<ErrorPage />} />
         </Route>

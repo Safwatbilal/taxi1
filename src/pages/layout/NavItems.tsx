@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   MapPin,
   RollerCoaster,
+  TrendingUp,
   User,
   UserCircle,
   Users,
@@ -66,6 +67,12 @@ export const userMenuItems = [
     url: "/profile",
     breadcrumb: "البروفايل",
   },
+  {
+    icon: TrendingUp,
+    title: "سجل الرحلات",
+    url: "/trips",
+    breadcrumb: "سجل الرحلات",
+  },
 ];
 
 export const driverMenuItems = [
@@ -80,5 +87,11 @@ export const driverMenuItems = [
     title: "البروفايل",
     url: "/profile",
     breadcrumb: "البروفايل",
+  },
+  {
+    icon: TrendingUp,
+    title: "سجل الرحلات",
+    url: "/trips",
+    breadcrumb: "سجل الرحلات",
   },
 ];

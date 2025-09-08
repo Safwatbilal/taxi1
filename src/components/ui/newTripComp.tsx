@@ -371,7 +371,7 @@ export const StepIndicator: React.FC<{ currentStep: number; totalSteps: number }
   currentStep,
   totalSteps,
 }) => {
-  const stepNames = ["المسار", "نوع السيارة", "حجم السيارة", "اختيار السائق"];
+  const stepNames = ["المسار", "نوع السيارة", "حجم السيارة", "تأكيد تفاصيل الرحلة"];
 
   return (
     <div className="w-full mb-8">

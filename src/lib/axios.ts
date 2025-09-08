@@ -2,8 +2,8 @@ import ax from "axios";
 // import { toast } from "sonner";
 import { AUTH_PATH } from "../routes/path";
 
-export const API_BASE_URL =
-  "https://taxi-git-master-ahmad-alnajjars-projects.vercel.app/api";
+
+export const API_BASE_URL = "https://taxi-szt5.onrender.com/api";
 const axios = ax.create({
   baseURL: API_BASE_URL,
   headers: {

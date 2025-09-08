@@ -308,7 +308,7 @@ const UsersComponent: React.FC = () => {
         <div>
           <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
             <CardHeader className="border-b border-slate-100">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between my-4">
                 <div className="relative flex-1 max-w-md">
                   <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input
@@ -327,34 +327,32 @@ const UsersComponent: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 w-full 
-                sm:grid-cols-[repeat(auto-fit,minmax(250px,1fr))] 
-                md:grid-cols-[repeat(3,1fr)]">
-                <div className="flex flex-col gap-1 lg:w-[70%]">
+              <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4  ">
+                <div className="flex flex-col gap-3 lg:w-[70%]">
                   <Label htmlFor="role-filter">الدور</Label>
                   <Select value={roleFilter} onValueChange={setRoleFilter}>
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="جميع الأدوار" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="w-full">
                       <SelectItem value="user" >مستخدم</SelectItem>
                       <SelectItem value="admin">مدير</SelectItem>
                       <SelectItem value="driver">سائق</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex flex-col gap-1 lg:w-[70%]">
+                <div className="flex flex-col gap-3 lg:w-[70%]">
                   <Label htmlFor="email-filter">البريد الإلكتروني</Label>
                   <Input
                     placeholder="البحث بالبريد الإلكتروني..."
-                    className="w-[90%]"
+                    className="w-full"
                   />
                 </div>
-                <div className="flex flex-col gap-1 lg:w-[70%]">
+                <div className="flex flex-col gap-3 lg:w-[70%]">
                   <Label htmlFor="phone-filter">رقم الهاتف</Label>
                   <Input
                     placeholder="البحث برقم الهاتف..."
-                    className="w-[90%]"
+                    className="w-full"
                   />
                 </div>
               </div>

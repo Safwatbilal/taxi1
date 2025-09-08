@@ -1,8 +1,6 @@
-// ./config/socket.js
 import { io } from "socket.io-client";
 
-const SOCKET_URL =
-  "https://taxi-git-master-ahmad-alnajjars-projects.vercel.app";
+const SOCKET_URL = "https://taxi-szt5.onrender.com/";
 
 export const socket = io(SOCKET_URL, {
   autoConnect: true,
@@ -11,35 +9,25 @@ export const socket = io(SOCKET_URL, {
   reconnectionAttempts: 5,
   timeout: 20000,
   forceNew: true,
-  transports: ["websocket", "polling"],
-
-  extraHeaders: {
-    "ngrok-skip-browser-warning": "true",
-  },
-
-  withCredentials: false,
-  upgrade: true,
+  transports: ["websocket"],
 });
 
 socket.on("connect", () => {
-  console.log("🟢 Socket.IO Connected:", socket.id);
+  console.log("🟢 Connected:", socket.id);
 });
 
 socket.on("disconnect", (reason) => {
-  console.log("🔴 Socket.IO Disconnected:", reason);
+  console.log("🔴 Disconnected:", reason);
 });
 
 socket.on("connect_error", (error) => {
-  console.log("❌ Socket.IO Connection Error:", error.message);
-  console.log("Error details:", error);
+  console.log("❌ Connection Error:", error.message);
 });
 
 socket.on("reconnect", (attemptNumber) => {
-  console.log("🔄 Socket.IO Reconnected after", attemptNumber, "attempts");
+  console.log("🔄 Reconnected after", attemptNumber, "attempts");
 });
 
 socket.on("reconnect_error", (error) => {
-  console.log("🔄❌ Socket.IO Reconnection Error:", error.message);
+  console.log("🔄❌ Reconnection Error:", error.message);
 });
-
-socket.connect();
